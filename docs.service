@@ -1,13 +1,16 @@
 [Unit]
 Description=doc.gm-lang.org service
 After=network.target
-StartLimitIntervalSec=0
+
 [Service]
+Environment="gmraw=/home/giacomo/docs/raw"
+Environment="gmsrc=/home/giacomo/docs/src"
+Environment="static=/home/giacomo/docs/static"
+
 Type=simple
-Restart=always
-RestartSec=1
+Restart=no
 User=giacomo
-ExecStart=/usr/bin/python3 /home/giacomo/docs/index.py
+ExecStart=python3 /home/giacomo/docs/index.py
 
 [Install]
 WantedBy=multi-user.target
