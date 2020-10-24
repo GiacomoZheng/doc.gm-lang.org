@@ -1,0 +1,13 @@
+[Unit]
+Description=doc.gm-lang.org service
+After=network.target
+StartLimitIntervalSec=0
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=giacomo
+ExecStart=/usr/bin/python3 /home/giacomo/docs/index.py
+
+[Install]
+WantedBy=multi-user.target
