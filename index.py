@@ -1,9 +1,8 @@
 #! python3
-#coding:utf-8
-# gmraw=/home/giacomo/docs/raw gmsrc=/home/giacomo/docs/src
+# coding:utf-8
+# gmraw=/home/giacomo/docs/raw gmsrc=/home/giacomo/docs/src static=/home/giacomo/docs/static python3
 
-# static=/mnt/c/Users/giaco/Documents/GitHub/doc.gm-lang.org/static
-# gmraw=/mnt/c/Users/giaco/Documents/GitHub/
+# static=/mnt/c/Users/giaco/Documents/GitHub/doc.gm-lang.org/static gmraw=/mnt/c/Users/giaco/Documents/GitHub/ gmsrc=/mnt/c/Users/giaco/Documents/GitHub/doc.gm-lang.org/src
 
 from tornado.ioloop import IOLoop
 from tornado.web import RequestHandler, Application, StaticFileHandler
@@ -11,6 +10,10 @@ from tornado.web import RequestHandler, Application, StaticFileHandler
 import os
 
 def analyze(s : str, loc : str = ".", file : str = ".gm", ext : str = ".gm") -> str:
+	"""
+	input: "gm.h.group"
+	output: "./gm/h/_/group/.gm"
+	"""
 	path = loc
 	ls = s.split(".")
 	count = 0
@@ -39,29 +42,51 @@ def analyze(s : str, loc : str = ".", file : str = ".gm", ext : str = ".gm") -> 
 
 class IndexHandler(RequestHandler):
 	def get(self):
-		self.write(str(os.environ.get("gmsrc")))
-		self.write(str(os.environ.get("gmraw")))
+		# self.write(str(os.environ.get("gmsrc")))
+		# self.write(str(os.environ.get("gmraw")))
+		pass
+
+class RawHandler(RequestHandler):
+	def get(self, title : str):
+		try:
+			with open(analyze(str(title), str(os.environ.get("gmraw"))), "r") as handle:
+				self.write(handle.read())
+		except Exception as e:
+			return str(e)
+
+def update(path_raw, path_src):
+	os.system("python3 -m pygments -x -o " + path_src + " -l " + os.environ.get("gmsrc") + "/gm.py:GMLexer " + path_raw)
 
 class SrcHandler(RequestHandler):
 	def get(self, title : str):
 		try:
-			with open(os.path.join(os.environ.get("gmsrc"), "index.html"), "r") as pattern:
-				path = analyze(str(title), str(os.environ.get("gmsrc")), "index.html", ".html")
-				with open(path, "r") as content:
-					html = pattern.read()\
-						.replace("{%- title -%}", title)\
-						.replace("{%- content -%}", content.read())
-					self.write(html)
+			# path_src = analyze(str(title), str(os.environ.get("gmsrc")), "index.html", ".html")
+			path_raw = analyze(str(title), str(os.environ.get("gmraw")))
+			path_src = str(os.environ.get("gmsrc")) + "/" + str(title) + ".html"
+			print("path_raw", path_raw)
+			print("path_src", path_src)
+
+			with open(os.path.join(os.environ.get("gmsrc"), "index.html"), "r") as handle:
+				pattern = handle.read()
+			# print("pattern", pattern)
+			
+			# if there is no such a file or this file is too old
+			# if not os.path.isfile(path_src) or (os.path.getmtime(path_src) < os.path.getmtime(path_raw)):
+
+			if not os.path.isfile(path_src) or (os.path.getmtime(path_src) < os.path.getmtime(path_raw)):
+				print("update")
+				update(path_raw, path_src)
+				# print("path_raw time", os.path.getmtime(path_raw))
+				# print("path_src time", os.path.getmtime(path_src))
+			
+			with open(path_src, "r") as handle:
+				html = pattern\
+					.replace("{%- title -%}", title)\
+					.replace("{%- content -%}", handle.read())
+				self.write(html)			
 		except Exception as e:
 			self.write(str(e))
 
-class RawHandler(RequestHandler):
-	def get(self, path : str):
-		try:
-			with open(analyze(str(path), str(os.environ.get("gmraw")), ".gm", ".gm"), "r") as content:
-				self.write(content.read())
-		except Exception as e:
-			self.write(str(e))
 
 def make_app():
 	return Application(handlers=[
@@ -72,9 +97,6 @@ def make_app():
 	])
 
 if __name__ == "__main__":
-	# print(analyze("gm.h.group"))
-	# print(analyze("gm.h.group.theorem"))
-
 	app = make_app()
 	app.listen(8888)
 	IOLoop.current().start()

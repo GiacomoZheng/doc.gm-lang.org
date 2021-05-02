@@ -3,6 +3,7 @@ Description=doc.gm-lang.org service
 After=network.target
 
 [Service]
+Environment="docs=/home/giacomo/docs"
 Environment="gmraw=/home/giacomo/docs/raw"
 Environment="gmsrc=/home/giacomo/docs/src"
 Environment="static=/home/giacomo/docs/static"
