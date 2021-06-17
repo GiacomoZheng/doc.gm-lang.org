@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_html/flutter_html.dart';
 
 void main() => runApp(MyApp());
 
-typedef Callback = void Function();
+typedef Callback = void Function(String);
 
 class Config {
   static const tabTitle = 'GM lang';
   static const icon = '◉';
   static const barTitle = icon + ' GM';
-  static const rawWebsite = 'https://raw.gm-lang.org/';
+  static const htmlWebsite = 'https://raw.gm-lang.org/';
 
   static RegExp nameFormat = RegExp(
     r"gm(\.[\w-]+)*",
@@ -19,8 +18,6 @@ class Config {
     multiLine: false,
     unicode: true,
   );
-
-  // file system
 }
 
 class MyApp extends StatelessWidget {
@@ -43,25 +40,18 @@ class MyApp extends StatelessWidget {
 class MyMainBody extends StatefulWidget {
   MyMainBody({Key? key}) : super(key: key);
 
-  // final String concept;
-
   @override
   _MyMainBodyState createState() => _MyMainBodyState();
 }
 
 class _MyMainBodyState extends State<MyMainBody> {
-  final myController = TextEditingController();
-
   bool _typing = false;
-  // String _code = "";
-  Html _code_html = Html(data: "");
+  String _code = "a\tb";
 
-  @override
-  void dispose() {
-    // Clean up the controller when the widget is disposed.
-    myController.dispose();
-    super.dispose();
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  // }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -73,7 +63,6 @@ class _MyMainBodyState extends State<MyMainBody> {
           ),
           title: _typing
               ? InputBox(
-                  controller: myController,
                   onUpdate: _update_body,
                 )
               : Text(Config.barTitle),
@@ -87,22 +76,27 @@ class _MyMainBodyState extends State<MyMainBody> {
           textTheme: Theme.of(context).textTheme,
           primary: false,
         ),
-        body: SingleChildScrollView(child: _code_html), // TODO
+        body: Center(
+          child: SingleChildScrollView(
+            child: SelectableText(
+              _code, //TODO
+              style: GoogleFonts.sourceCodePro(),
+            ),
+            scrollDirection: Axis.vertical,
+          ),
+        ),
       );
 
   void _reverse_typing() => setState(() {
         _typing = !_typing;
       });
 
-  void _update_body() => setState(() async {
-        String name = myController.text;
+  void _update_body(String name) => setState(() async {
+        final response = await __fetch_code(name);
 
-        final response_code = await __fetch_code(name);
-
-        if (response_code.statusCode == 200) {
+        if (response.statusCode == 200) {
           // If the server did return a 200 OK response,
-
-          // _code = response_code.body;
+          _code = response.body;
           _reverse_typing();
         } else {
           // If the server did not return a 200 OK response,
@@ -113,30 +107,25 @@ class _MyMainBodyState extends State<MyMainBody> {
       });
 
   Future<http.Response> __fetch_code(String name) =>
-      http.get(Uri.parse(Config.rawWebsite + name));
-
-  Future<http.Response> __fetch_time(String name) =>
-      http.get(Uri.parse(Config.rawWebsite + name + "/time"));
+      http.get(Uri.parse(Config.htmlWebsite + name));
 }
 
 class InputBox extends StatelessWidget {
-  InputBox({Key? key, required this.controller, required this.onUpdate})
-      : super(key: key);
+  InputBox({Key? key, required this.onUpdate}) : super(key: key);
   final Callback onUpdate;
-  final controller;
+  final TextEditingController _controller = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) => Form(
         key: _formKey,
-        // alignment: Alignment.centerLeft,
         child: Row(
-          // crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Expanded(
               child: Container(
                 color: Colors.white,
                 child: TextFormField(
-                  controller: controller,
+                  controller: _controller,
+                  autofocus: true,
                   cursorColor: Colors.black,
                   decoration: InputDecoration(
                     // border: InputBorder.none,
@@ -151,9 +140,15 @@ class InputBox extends StatelessWidget {
                             .toString()
                             .length !=
                         value.length) {
+                      // TODO
                       return 'Format error';
                     }
                     return null;
+                  },
+                  onFieldSubmitted: (text) {
+                    if (_formKey.currentState!.validate()) {
+                      onUpdate(text);
+                    }
                   },
                 ),
               ),
@@ -162,12 +157,9 @@ class InputBox extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: ElevatedButton(
                 onPressed: () {
-                  // Validate will return true if the form is valid, or false if
-                  // the form is invalid.
                   if (_formKey.currentState!.validate()) {
-                    onUpdate();
-                    // ScaffoldMessenger.of(context).showSnackBar(
-                    //     SnackBar(content: Text('Processing Data')));
+                    // TODO
+                    onUpdate(_controller.text);
                   }
                 },
                 child: const Text('Submit'),

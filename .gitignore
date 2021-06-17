@@ -1,2 +1,4 @@
-src/**
 _old/
+.vscode
+
+_style.dart
