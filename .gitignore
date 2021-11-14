@@ -1,4 +1,5 @@
-_old/
-.vscode
-
-_style.dart
+src/
+raw/
+__pycache__
+static/contents.py
+static/gm.py
